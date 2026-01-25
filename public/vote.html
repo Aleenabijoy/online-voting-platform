@@ -283,6 +283,17 @@
           console.error("Voting failed");
         });
     }
+          function goToVoters() {
+        window.location.href = "/voters.html";
+      }
+
+      function logout() {
+        fetch("/auth/logout", { credentials: "include" })
+          .then(() => {
+            window.location.href = "/index.html";
+          });
+      }
+
 
   </script>
 
