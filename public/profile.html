@@ -49,10 +49,6 @@
       cursor: pointer;
     }
 
-    .profile-btn:hover {
-      background: #c7d2fe;
-    }
-
     .logout-btn {
       background: #f87171;
       border: none;
@@ -63,10 +59,6 @@
       font-size: 14px;
     }
 
-    .logout-btn:hover {
-      background: #ef4444;
-    }
-
     .container {
       max-width: 520px;
       margin: 60px auto;
@@ -74,16 +66,6 @@
       padding: 35px;
       border-radius: 20px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      margin-top: 0;
-      color: #334155;
-    }
-
-    p {
-      color: #64748b;
-      font-size: 14px;
     }
 
     label {
@@ -123,7 +105,7 @@
 
   <div class="profile-area">
     <span id="userName">Loading...</span>
-    <button class="profile-btn" onclick="goToProfile()">Edit Profile</button>
+    <button class="profile-btn" onclick="goToEdit()">Edit Profile</button>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 </div>
@@ -160,7 +142,7 @@
 
 <script>
 /* =========================
-   PROFILE BAR USER INFO
+   AUTH + PROFILE LOAD
 ========================= */
 fetch("/whoami", { credentials: "include" })
   .then(res => res.json())
@@ -169,42 +151,26 @@ fetch("/whoami", { credentials: "include" })
       window.location.href = "/index.html";
       return;
     }
+
     document.getElementById("userName").innerText =
       data.user.name || data.user.email;
+
+    loadProfile();
   });
 
-function goToProfile() {
-  window.location.href = "/profile.html?edit=true";
-}
-
-/* =========================
-   LOAD PROFILE (EDIT SAFE)
-========================= */
-function loadProfile(retry = false) {
+function loadProfile() {
   fetch("/profile", { credentials: "include" })
-    .then(res => {
-      if (res.status === 401) {
-        if (!retry) {
-          setTimeout(() => loadProfile(true), 300);
-          return;
-        }
-        window.location.href = "/index.html";
-        return;
-      }
-      return res.json();
-    })
+    .then(res => res.json())
     .then(user => {
-      if (!user) return;
-
       const params = new URLSearchParams(window.location.search);
-      const isEditMode = params.get("edit") === "true";
+      const isEdit = params.get("edit") === "true";
 
-      if (user.profileCompleted && !isEditMode) {
+      if (user.profileCompleted && !isEdit) {
         window.location.href = "/vote.html";
         return;
       }
 
-      if (isEditMode) {
+      if (isEdit) {
         document.getElementById("profileTitle").innerText = "Edit Your Profile";
       }
 
@@ -213,42 +179,49 @@ function loadProfile(retry = false) {
       gender.value = user.gender || "";
       linkedinUrl.value = user.linkedinUrl || "";
       bio.value = user.bio || "";
-    })
-    .catch(() => {
-      window.location.href = "/index.html";
     });
 }
 
-loadProfile();
-
 /* =========================
-   SAVE PROFILE
+   SAVE PROFILE (FIXED)
 ========================= */
-document.getElementById("profileForm").addEventListener("submit", e => {
+document.getElementById("profileForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  fetch("/profile", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: name.value,
-      age: age.value,
-      gender: gender.value,
-      linkedinUrl: linkedinUrl.value,
-      bio: bio.value
-    })
-  })
-  .then(() => {
+  try {
+    const res = await fetch("/profile", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.value.trim(),
+        age: age.value,
+        gender: gender.value,
+        linkedinUrl: linkedinUrl.value.trim(),
+        bio: bio.value.trim()
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Profile save failed");
+      return;
+    }
+
     window.location.href = "/vote.html";
-  });
+  } catch (err) {
+    alert("Network error while saving profile");
+  }
 });
+
+function goToEdit() {
+  window.location.href = "/profile.html?edit=true";
+}
 
 function logout() {
   fetch("/auth/logout", { credentials: "include" })
-    .then(() => {
-      window.location.href = "/index.html";
-    });
+    .then(() => window.location.href = "/index.html");
 }
 </script>
 

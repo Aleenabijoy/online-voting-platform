@@ -9,7 +9,9 @@ const path = require("path");
 const profileRoutes = require("./routes/profile");
 const forgotRoutes = require("./routes/forgot");
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json());
+
 
 app.use(cors({
   origin: "http://localhost:5000",
@@ -18,16 +20,19 @@ app.use(cors({
 
 app.use(
   session({
-  secret: "voting-secret-key",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: "lax"
-  }
-})
-
+    secret: "voting-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
+    }
+  })
 );
+
+
+
 
 mongoose
   .connect(process.env.MONGO_URI)
