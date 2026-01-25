@@ -12,19 +12,29 @@ const forgotRoutes = require("./routes/forgot");
 
 const app = express();
 
-// ✅ REQUIRED FOR RENDER / HTTPS
+/* =========================
+   REQUIRED FOR RENDER / HTTPS
+========================= */
 app.set("trust proxy", 1);
 
-// Body parser
+/* =========================
+   BODY PARSER
+========================= */
 app.use(express.json());
 
-// ✅ FIXED CORS (THIS WAS THE BUG)
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+/* =========================
+   CORS (FIXED)
+========================= */
+app.use(
+  cors({
+    origin: true,          // allow same origin + Render domain
+    credentials: true
+  })
+);
 
-// ✅ SESSION CONFIG (CORRECT)
+/* =========================
+   SESSION (CRITICAL FIX)
+========================= */
 app.use(
   session({
     name: "voting.sid",
@@ -33,32 +43,42 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production"
+      sameSite: "none",    // ✅ REQUIRED FOR FETCH
+      secure: true         // ✅ REQUIRED FOR HTTPS
     }
   })
 );
 
-// DB
+/* =========================
+   DATABASE
+========================= */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+  .catch(err => console.error("MongoDB Error:", err));
 
-// Passport
+/* =========================
+   PASSPORT
+========================= */
 app.use(passport.initialize());
 app.use(passport.session());
 require("./config/passport");
 
-// Static files
+/* =========================
+   STATIC FILES
+========================= */
 app.use(express.static(path.join(__dirname, "public")));
 
-// Pages
+/* =========================
+   PAGES
+========================= */
 app.get("/vote", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "vote.html"));
 });
 
-// Debug
+/* =========================
+   DEBUG
+========================= */
 app.get("/whoami", (req, res) => {
   res.json({
     loggedIn: !!req.user,
@@ -66,19 +86,24 @@ app.get("/whoami", (req, res) => {
   });
 });
 
-// Routes
+/* =========================
+   ROUTES
+========================= */
 app.use("/candidates", require("./routes/candidates"));
 app.use("/auth", require("./routes/auth"));
 app.use("/vote", require("./routes/vote"));
 app.use("/voters", require("./routes/voters"));
 app.use("/auth/local", require("./routes/localAuth"));
-app.use("/auth/forgot", require("./routes/forgot"));
+app.use("/auth/forgot", forgotRoutes);
 app.use("/profile", profileRoutes);
 app.use("/forgot", forgotRoutes);
 
-// Start server
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+/* =========================
+   START SERVER
+========================= */
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 console.log("EMAIL:", process.env.EMAIL_USER);
