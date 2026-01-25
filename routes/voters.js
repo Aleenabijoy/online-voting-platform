@@ -6,17 +6,15 @@ const Vote = require("../models/Vote");
 router.get("/", async (req, res) => {
   try {
     const votes = await Vote.find()
-      .populate("user", "name email linkedinUrl")
+      .populate("user", "name linkedinUrl")
       .populate("candidate", "name");
 
     const voters = votes
-        .filter(v => v.user && v.candidate)
-        .map(v => ({
-            voterName: v.user.name || v.user.email || "Anonymous",
-            voterLinkedIn: v.user.linkedinUrl || null,
-            votedFor: v.candidate.name
-        }));
-
+      .filter(v => v.user && v.user.name && v.user.linkedinUrl)
+      .map(v => ({
+        name: v.user.name,
+        linkedinUrl: v.user.linkedinUrl
+      }));
 
     res.json(voters);
   } catch (err) {

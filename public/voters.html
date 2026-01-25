@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Voters | Online Voting</title>
+  <meta charset="UTF-8" />
+  <title>Voters List</title>
 
   <style>
     body {
@@ -16,7 +17,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 16px 30px;
-      background: rgba(255,255,255,0.85);
+      background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(8px);
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
@@ -27,48 +28,17 @@
       color: #334155;
     }
 
-    .profile-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    #userName {
-      font-size: 14px;
-      color: #334155;
-      font-weight: 500;
-    }
-
-    .nav-btn {
+    .back-btn {
       background: #e0e7ff;
       border: none;
       color: #3730a3;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 999px;
-      font-size: 13px;
       cursor: pointer;
-    }
-
-    .nav-btn:hover {
-      background: #c7d2fe;
-    }
-
-    .logout-btn {
-      background: #f87171;
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .logout-btn:hover {
-      background: #ef4444;
     }
 
     .container {
-      max-width: 700px;
+      max-width: 600px;
       margin: 50px auto;
       background: white;
       padding: 30px;
@@ -81,107 +51,65 @@
       color: #334155;
     }
 
-    .voter-item {
-      background: #f1f5f9;
+    .voter {
       padding: 14px 18px;
-      border-radius: 14px;
+      border-radius: 12px;
+      background: #f1f5f9;
       margin-bottom: 12px;
-      color: #334155;
+      cursor: pointer;
+      font-weight: 500;
+      color: #1e293b;
+      transition: background 0.2s;
     }
 
-    .voter-item a {
-      color: #6366f1;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .voter-item a:hover {
-      text-decoration: underline;
+    .voter:hover {
+      background: #e0e7ff;
     }
   </style>
 </head>
 
 <body>
-
-<!-- TOP BAR -->
-<div class="top-bar">
-  <span class="app-title">🗳 Online Voting</span>
-
-  <div class="profile-area">
-    <span id="userName">Loading...</span>
-    <button class="nav-btn" onclick="goToVote()">Vote</button>
-    <button class="nav-btn" onclick="goToProfile()">Edit Profile</button>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="top-bar">
+    <span class="app-title">🗳 Online Voting</span>
+    <button class="back-btn" onclick="goBack()">Back</button>
   </div>
-</div>
 
-<!-- CONTENT -->
-<div class="container">
-  <h2>Voters List</h2>
-  <div id="voters"></div>
-</div>
+  <div class="container">
+    <h2>Voters</h2>
+    <div id="voters"></div>
+  </div>
 
-<script>
-/* =========================
-   AUTH CHECK + USER NAME
-========================= */
-fetch("/whoami", { credentials: "include" })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.loggedIn) {
-      window.location.href = "/index.html";
-      return;
-    }
-    document.getElementById("userName").innerText =
-      data.user.name || data.user.email;
-  });
-
-function goToVote() {
-  window.location.href = "/vote.html";
-}
-
-function goToProfile() {
-  window.location.href = "/profile.html?edit=true";
-}
-
-/* =========================
-   LOAD VOTERS
-========================= */
-fetch("/voters", { credentials: "include" })
-  .then(res => res.json())
-  .then(data => {
-    const container = document.getElementById("voters");
-
-    if (!data || data.length === 0) {
-      container.innerHTML = "<p>No votes yet.</p>";
-      return;
+  <script>
+    function goBack() {
+      window.location.href = "/vote.html";
     }
 
-    data.forEach(v => {
-      const div = document.createElement("div");
-      div.className = "voter-item";
+    fetch("/voters", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("voters");
 
-      const nameHTML =
-  v.voterLinkedIn && v.voterLinkedIn.startsWith("http")
-    ? `<a href="${v.voterLinkedIn}" target="_blank">${v.voterName}</a>`
-    : `<strong>${v.voterName}</strong>`;
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No voters yet.</p>";
+          return;
+        }
 
-      div.innerHTML = `
-        ${nameHTML}<br>
-        Voted for: ${v.votedFor}
-      `;
+        data.forEach(v => {
+          const div = document.createElement("div");
+          div.className = "voter";
+          div.innerText = v.name;
 
-      container.appendChild(div);
-    });
-  });
+          div.onclick = () => {
+            window.open(v.linkedinUrl, "_blank");
+          };
 
-function logout() {
-  fetch("/auth/logout", { credentials: "include" })
-    .then(() => {
-      window.location.href = "/index.html";
-    });
-}
-</script>
-
+          container.appendChild(div);
+        });
+      })
+      .catch(() => {
+        document.getElementById("voters").innerHTML =
+          "<p>Error loading voters.</p>";
+      });
+  </script>
 </body>
 </html>
