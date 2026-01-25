@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forgot Password | Online Voting</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #fde2e4, #e0f2fe);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      width: 360px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #334155;
+    }
+
+    p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      margin: 15px 0;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 2px rgba(147,197,253,0.4);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #a5b4fc, #93c5fd);
+      color: #1e293b;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #6366f1;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .message {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #475569;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h2>Forgot Password</h2>
+    <p>Enter your registered email address.<br>
+       We’ll send you a reset link.</p>
+
+    <input type="email" id="email" placeholder="Email address" required>
+
+    <button onclick="sendReset()">Send Reset Link</button>
+
+    <div class="message" id="message"></div>
+
+    <a href="/index.html">← Back to Login</a>
+  </div>
+
+  <script>
+    function sendReset() {
+      const email = document.getElementById("email").value;
+      const message = document.getElementById("message");
+
+      if (!email) {
+        message.innerText = "Please enter your email.";
+        return;
+      }
+
+      fetch("/auth/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        message.innerText = data.message;
+      })
+      .catch(() => {
+        message.innerText = "Something went wrong. Try again.";
+      });
+    }
+  </script>
+
+</body>
+</html>
