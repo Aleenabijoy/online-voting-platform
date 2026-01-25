@@ -159,27 +159,29 @@ fetch("/whoami", { credentials: "include" })
   });
 
 function loadProfile() {
-  fetch("/profile", { credentials: "include" })
-    .then(res => res.json())
-    .then(user => {
-      const params = new URLSearchParams(window.location.search);
-      const isEdit = params.get("edit") === "true";
+  fetch("/profile", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  credentials: "include", // 🚨 REQUIRED
+  body: JSON.stringify({
+    name,
+    age,
+    gender,
+    linkedinUrl,
+    bio
+  })
+})
+.then(async (res) => {
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  alert("Profile saved successfully");
+})
+.catch(err => {
+  alert(err.message || "Network error");
+});
 
-      if (user.profileCompleted && !isEdit) {
-        window.location.href = "/vote.html";
-        return;
-      }
-
-      if (isEdit) {
-        document.getElementById("profileTitle").innerText = "Edit Your Profile";
-      }
-
-      name.value = user.name || "";
-      age.value = user.age || "";
-      gender.value = user.gender || "";
-      linkedinUrl.value = user.linkedinUrl || "";
-      bio.value = user.bio || "";
-    });
 }
 
 /* =========================
