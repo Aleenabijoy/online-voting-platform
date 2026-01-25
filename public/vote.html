@@ -227,7 +227,7 @@
     // ========================
     // LOAD CANDIDATES
     // ========================
-    fetch("http://localhost:5000/candidates", {
+    fetch("/candidates", {
       credentials: "include"
     })
       .then(res => res.json())
