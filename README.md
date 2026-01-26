@@ -4,6 +4,16 @@ A secure online voting system built using Node.js, Express, MongoDB, and Passpor
 
 🔗 **Live Demo:** https://online-voting-platform-9ypo.onrender.com
 
+## 👥 Team
+
+This project was developed collaboratively.
+
+- **Aleena Bijoy**  
+  GitHub: https://github.com/Aleenabijoy
+
+- **Aneena Benny** 
+  GitHub: https://github.com/Aneena-ben
+
 ## ✨ Features
 - Local login & signup
 - Google OAuth authentication
