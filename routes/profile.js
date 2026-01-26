@@ -1,31 +1,21 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
 
-async function ensureAuth(req, res, next) {
-  try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    req.currentUser = user;
-    next();
-  } catch (err) {
-    console.error("PROFILE AUTH ERROR:", err);
-    return res.status(500).json({ message: "Profile auth error" });
+/* =========================
+   AUTH MIDDLEWARE (SAFE)
+========================= */
+function ensureAuth(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
+  next();
 }
 
 /* =========================
    GET PROFILE
 ========================= */
 router.get("/", ensureAuth, (req, res) => {
-  res.json(req.currentUser);
+  res.json(req.user);
 });
 
 /* =========================
@@ -39,15 +29,15 @@ router.post("/", ensureAuth, async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const user = req.currentUser;
-    user.name = name;
-    user.age = age;
-    user.gender = gender;
-    user.linkedinUrl = linkedinUrl;
-    user.bio = bio || "";
-    user.profileCompleted = true;
+    // req.user IS A MONGOOSE DOCUMENT
+    req.user.name = name;
+    req.user.age = age;
+    req.user.gender = gender;
+    req.user.linkedinUrl = linkedinUrl;
+    req.user.bio = bio || "";
+    req.user.profileCompleted = true;
 
-    await user.save();
+    await req.user.save();
 
     res.json({ message: "Profile saved successfully" });
   } catch (err) {
