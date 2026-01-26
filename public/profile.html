@@ -99,20 +99,21 @@
   </div>
 </div>
 
-<!-- PROFILE CARD -->
+<!-- PROFILE FORM -->
 <div class="container">
   <h2>Complete Your Profile</h2>
   <p>All fields marked * are mandatory.</p>
 
-  <form id="profileForm">
+  <!-- 🔥 NATIVE FORM SUBMIT (NO FETCH) -->
+  <form action="/profile" method="POST">
     <label>Name *</label>
-    <input type="text" id="name" required />
+    <input type="text" name="name" required />
 
     <label>Age *</label>
-    <input type="number" id="age" min="18" required />
+    <input type="number" name="age" min="18" required />
 
     <label>Gender *</label>
-    <select id="gender" required>
+    <select name="gender" required>
       <option value="">Select</option>
       <option>Female</option>
       <option>Male</option>
@@ -120,10 +121,10 @@
     </select>
 
     <label>LinkedIn URL *</label>
-    <input type="url" id="linkedinUrl" required />
+    <input type="url" name="linkedinUrl" required />
 
     <label>Description (optional)</label>
-    <textarea id="bio"></textarea>
+    <textarea name="bio"></textarea>
 
     <button type="submit" class="primary">Save & Continue</button>
   </form>
@@ -131,89 +132,21 @@
 
 <script>
 /* =========================
-   CONFIG
+   AUTH CHECK + USER NAME
 ========================= */
-const API = "https://online-voting-platform-9ypo.onrender.com";
-
-/* =========================
-   AUTH CHECK
-========================= */
-fetch(`${API}/whoami`, { credentials: "include" })
+fetch("/whoami", { credentials: "include" })
   .then(res => res.json())
   .then(data => {
     if (!data.loggedIn) {
       window.location.href = "/index.html";
       return;
     }
-
     document.getElementById("userName").innerText =
       data.user.name || data.user.email;
-
-    loadProfile();
   });
 
-/* =========================
-   LOAD PROFILE (GET)
-========================= */
-function loadProfile() {
-  fetch(`${API}/profile`, {
-    credentials: "include",
-    mode: "cors"
-  })
-    .then(res => {
-      if (!res.ok) return null;
-      return res.json();
-    })
-    .then(user => {
-      if (!user) return;
-
-      name.value = user.name || "";
-      age.value = user.age || "";
-      gender.value = user.gender || "";
-      linkedinUrl.value = user.linkedinUrl || "";
-      bio.value = user.bio || "";
-    });
-}
-
-/* =========================
-   SAVE PROFILE (POST)
-========================= */
-document.getElementById("profileForm").addEventListener("submit", async e => {
-  e.preventDefault();
-
-  try {
-    const res = await fetch(`${API}/profile`, {
-      method: "POST",
-      credentials: "include",
-      mode: "cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: name.value.trim(),
-        age: age.value,
-        gender: gender.value,
-        linkedinUrl: linkedinUrl.value.trim(),
-        bio: bio.value.trim()
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.message || "Profile save failed");
-      return;
-    }
-
-    window.location.href = "/vote-page";
-  } catch (err) {
-    alert("Network error while saving profile");
-  }
-});
-
-/* =========================
-   LOGOUT
-========================= */
 function logout() {
-  fetch(`${API}/auth/logout`, { credentials: "include" })
+  fetch("/auth/logout", { credentials: "include" })
     .then(() => window.location.href = "/index.html");
 }
 </script>
