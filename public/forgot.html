@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Forgot Password | Online Voting</title>
-
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
@@ -14,44 +14,29 @@
       justify-content: center;
       align-items: center;
     }
-
     .card {
       background: white;
       padding: 40px;
       border-radius: 20px;
-      width: 360px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      width: 380px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
       text-align: center;
     }
-
-    h2 {
-      margin-top: 0;
-      color: #334155;
-    }
-
-    p {
-      font-size: 14px;
-      color: #64748b;
-    }
-
+    h2 { margin-top: 0; color: #334155; }
+    p { font-size: 14px; color: #64748b; line-height: 1.6; }
     input {
       width: 100%;
-      padding: 10px 12px;
-      margin: 15px 0;
+      padding: 11px 14px;
+      margin: 10px 0;
       border-radius: 10px;
       border: 1px solid #cbd5e1;
       font-size: 14px;
     }
-
-    input:focus {
-      outline: none;
-      border-color: #93c5fd;
-      box-shadow: 0 0 0 2px rgba(147,197,253,0.4);
-    }
-
+    input:focus { outline: none; border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(147,197,253,0.3); }
     button {
       width: 100%;
       padding: 12px;
+      margin-top: 6px;
       border-radius: 999px;
       border: none;
       font-size: 14px;
@@ -60,71 +45,69 @@
       background: linear-gradient(135deg, #a5b4fc, #93c5fd);
       color: #1e293b;
     }
-
-    button:hover {
-      opacity: 0.9;
-    }
-
-    a {
-      display: inline-block;
-      margin-top: 15px;
-      font-size: 13px;
-      color: #6366f1;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .message {
-      margin-top: 15px;
+    button:hover { opacity: 0.88; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    #msg {
+      margin-top: 14px;
       font-size: 14px;
-      color: #475569;
+      padding: 12px;
+      border-radius: 10px;
+      display: none;
     }
+    .msg-error   { background: #fee2e2; color: #991b1b; }
+    .msg-success { background: #d1fae5; color: #065f46; }
+    a { font-size: 13px; color: #6366f1; text-decoration: none; display: inline-block; margin-top: 16px; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
-
 <body>
-
   <div class="card">
-    <h2>Forgot Password</h2>
-    <p>Enter your registered email address.<br>
-       We’ll send you a reset link.</p>
+    <h2>🔑 Forgot Password</h2>
+    <p>Enter the email address you used to sign up.<br>We'll send a reset link to your inbox.</p>
 
-    <input type="email" id="email" placeholder="Email address" required>
+    <input type="email" id="email" placeholder="Your email address" />
+    <button id="btn" onclick="send()">Send Reset Link</button>
 
-    <button onclick="sendReset()">Send Reset Link</button>
-
-    <div class="message" id="message"></div>
-
+    <div id="msg"></div>
     <a href="/index.html">← Back to Login</a>
   </div>
 
   <script>
-    function sendReset() {
-      const email = document.getElementById("email").value;
-      const message = document.getElementById("message");
+    async function send() {
+      const email = document.getElementById("email").value.trim();
+      const btn   = document.getElementById("btn");
+      const msg   = document.getElementById("msg");
 
-      if (!email) {
-        message.innerText = "Please enter your email.";
-        return;
+      if (!email) { showMsg("Please enter your email address.", true); return; }
+
+      btn.disabled    = true;
+      btn.textContent = "Sending...";
+
+      try {
+        const r = await fetch("/forgot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const d = await r.json();
+        const isError = !d.message.includes("sent") && !d.message.includes("reset");
+        showMsg(d.message, isError);
+      } catch {
+        showMsg("Something went wrong. Please try again.", true);
       }
 
-      fetch("/auth/forgot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      })
-      .then(res => res.json())
-      .then(data => {
-        message.innerText = data.message;
-      })
-      .catch(() => {
-        message.innerText = "Something went wrong. Try again.";
-      });
+      btn.disabled    = false;
+      btn.textContent = "Send Reset Link";
     }
-  </script>
 
+    function showMsg(text, isError) {
+      const msg = document.getElementById("msg");
+      msg.textContent = text;
+      msg.className = isError ? "msg-error" : "msg-success";
+      msg.style.display = "block";
+    }
+
+    document.getElementById("email").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  </script>
 </body>
 </html>

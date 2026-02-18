@@ -105,12 +105,15 @@
   <p>All fields marked * are mandatory.</p>
 
   <!-- 🔥 NATIVE FORM SUBMIT (NO FETCH) -->
-  <form action="/profile" method="POST">
+  <form action="/profile" method="POST" onsubmit="return validateAge()">
     <label>Name *</label>
     <input type="text" name="name" required />
 
-    <label>Age *</label>
-    <input type="number" name="age" min="18" required />
+    <label>Age * (must be 18 or older)</label>
+    <input type="number" name="age" id="ageInput" min="18" max="120" required />
+    <div id="ageError" style="color:#ef4444; font-size:13px; margin-top:-10px; margin-bottom:10px; display:none;">
+      ⚠️ You must be at least 18 years old to participate.
+    </div>
 
     <label>Gender *</label>
     <select name="gender" required>
@@ -132,7 +135,7 @@
 
 <script>
 /* =========================
-   AUTH CHECK + USER NAME
+   AUTH CHECK + PROFILE GUARD
 ========================= */
 fetch("/whoami", { credentials: "include" })
   .then(res => res.json())
@@ -141,13 +144,41 @@ fetch("/whoami", { credentials: "include" })
       window.location.href = "/index.html";
       return;
     }
+
+    // ✅ If profile already completed AND not explicitly editing, skip to voting
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEditing = urlParams.get("edit") === "true";
+
+    if (data.user.profileCompleted && !isEditing) {
+      window.location.href = "/vote-page";
+      return;
+    }
+
     document.getElementById("userName").innerText =
       data.user.name || data.user.email;
+
+    // Pre-fill existing values if editing
+    if (data.user.name) document.querySelector('[name="name"]').value = data.user.name;
+    if (data.user.age) document.querySelector('[name="age"]').value = data.user.age;
+    if (data.user.gender) document.querySelector('[name="gender"]').value = data.user.gender;
+    if (data.user.linkedinUrl) document.querySelector('[name="linkedinUrl"]').value = data.user.linkedinUrl;
+    if (data.user.bio) document.querySelector('[name="bio"]').value = data.user.bio;
   });
 
 function logout() {
   fetch("/auth/logout", { credentials: "include" })
     .then(() => window.location.href = "/index.html");
+}
+
+function validateAge() {
+  const age = parseInt(document.getElementById("ageInput").value, 10);
+  const ageError = document.getElementById("ageError");
+  if (isNaN(age) || age < 18) {
+    ageError.style.display = "block";
+    return false; // Prevent form submit
+  }
+  ageError.style.display = "none";
+  return true; // Allow form submit
 }
 </script>
 
