@@ -40,9 +40,15 @@ router.post("/", ensureAuth, async (req, res) => {
       return res.status(400).send("Missing required fields");
     }
 
+    // ✅ Age validation: must be 18 or older
+    const ageNum = parseInt(age, 10);
+    if (isNaN(ageNum) || ageNum < 18) {
+      return res.status(400).send("You must be at least 18 years old to participate.");
+    }
+
     // Update user (req.user is a mongoose document)
     req.user.name = name;
-    req.user.age = age;
+    req.user.age = ageNum;
     req.user.gender = gender;
     req.user.linkedinUrl = linkedinUrl;
     req.user.bio = bio || "";

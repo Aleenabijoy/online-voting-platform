@@ -190,6 +190,22 @@
   <div class="container">
     <h2>Choose Your Candidate</h2>
 
+    <!-- ✅ VOTED BANNER (hidden by default) -->
+    <div id="votedBanner" style="
+      display: none;
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      font-size: 15px;
+      text-align: center;
+    ">
+      ✅ You have already voted. Thank you for participating!
+    </div>
+
     <div id="candidates" class="candidates">
       <!-- Candidates will be loaded here -->
     </div>
@@ -202,6 +218,8 @@
   </div>
 
   <script>
+    let userHasVoted = false;
+
     // Load user info for profile bar
     fetch("/whoami", { credentials: "include" })
       .then(res => res.json())
@@ -210,13 +228,46 @@
           window.location.href = "/index.html";
           return;
         }
-
         document.getElementById("userName").innerText =
           data.user.name || data.user.email;
+
+        // ✅ Check if user has already voted
+        return fetch("/vote/status", { credentials: "include" });
+      })
+      .then(res => res && res.json())
+      .then(statusData => {
+        if (statusData && statusData.hasVoted) {
+          userHasVoted = true;
+          showAlreadyVotedBanner();
+        }
       })
       .catch(() => {
         window.location.href = "/index.html";
       });
+
+    function showAlreadyVotedBanner() {
+      const banner = document.getElementById("votedBanner");
+      if (banner) banner.style.display = "block";
+      // Lock all vote buttons
+      document.querySelectorAll(".vote-btn").forEach(btn => {
+        btn.disabled = true;
+        btn.textContent = "Already Voted ✓";
+        btn.style.background = "#d1fae5";
+        btn.style.color = "#065f46";
+      });
+    }
+
+    function showSuccessVotedState() {
+      const banner = document.getElementById("votedBanner");
+      if (banner) banner.style.display = "block";
+      // Lock all vote buttons
+      document.querySelectorAll(".vote-btn").forEach(btn => {
+        btn.disabled = true;
+        btn.textContent = "Already Voted ✓";
+        btn.style.background = "#d1fae5";
+        btn.style.color = "#065f46";
+      });
+    }
 
     function goToProfile() {
       window.location.href = "/profile.html?edit=true";
@@ -249,13 +300,18 @@
             <a class="candidate-link" href="${candidate.linkedinUrl}" target="_blank">
               View LinkedIn Profile
             </a>
-            <button class="vote-btn" onclick="vote('${candidate._id}')">
+            <button class="vote-btn" onclick="vote('${candidate._id}', this)">
               Vote
             </button>
           `;
 
           container.appendChild(div);
         });
+
+        // After building cards, check if already voted and lock them
+        if (userHasVoted) {
+          showAlreadyVotedBanner();
+        }
       })
       .catch(() => {
         container.innerHTML = "<p>Error loading candidates.</p>";
@@ -264,37 +320,53 @@
     // ========================
     // VOTE FUNCTION
     // ========================
-    function vote(candidateId) {
+    function vote(candidateId, clickedBtn) {
+      if (userHasVoted) return; // Safety guard
+
+      // Disable the clicked button immediately to prevent double-click
+      clickedBtn.disabled = true;
+      clickedBtn.textContent = "Voting...";
+
       fetch(`/vote/${candidateId}`, {
         method: "POST",
         credentials: "include"
       })
         .then(res => res.json())
         .then(data => {
-          if (
-            data.message === "Vote recorded successfully" ||
-            data.message === "You already voted"
-          ) {
-            // ✅ Go to voters page instead of loading voters here
-            window.location.href = "/voters.html";
+          if (data.message === "Vote recorded successfully") {
+            userHasVoted = true;
+            // ✅ Show success banner and lock ALL buttons
+            showSuccessVotedState();
+            const banner = document.getElementById("votedBanner");
+            if (banner) {
+              banner.textContent = "✅ Successfully Voted! Thank you for participating.";
+            }
+          } else if (data.message === "You already voted") {
+            userHasVoted = true;
+            showAlreadyVotedBanner();
+          } else {
+            clickedBtn.disabled = false;
+            clickedBtn.textContent = "Vote";
+            alert("Voting failed: " + data.message);
           }
         })
         .catch(() => {
-          console.error("Voting failed");
+          clickedBtn.disabled = false;
+          clickedBtn.textContent = "Vote";
+          alert("Voting failed. Please try again.");
         });
     }
-          function goToVoters() {
-        window.location.href = "/voters.html";
-      }
 
-      function logout() {
-        fetch("/auth/logout", { credentials: "include" })
-          .then(() => {
-            window.location.href = "/index.html";
-          });
-      }
+    function goToVoters() {
+      window.location.href = "/voters.html";
+    }
 
-
+    function logout() {
+      fetch("/auth/logout", { credentials: "include" })
+        .then(() => {
+          window.location.href = "/index.html";
+        });
+    }
   </script>
 
 </body>
