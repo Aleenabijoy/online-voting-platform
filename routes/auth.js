@@ -16,9 +16,17 @@ router.get(
 // Google OAuth callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: true }),
+  passport.authenticate("google", {
+    failureRedirect: "/index.html",
+    session: true
+  }),
   (req, res) => {
-    res.redirect("/profile.html");
+    req.session.save(() => {
+      if (!req.user.profileCompleted) {
+        return res.redirect("/profile.html");
+      }
+      return res.redirect("/vote-page");
+    });
   }
 );
 
@@ -27,9 +35,12 @@ router.get(
 ========================= */
 
 // Start LinkedIn OAuth
+// Start LinkedIn OAuth
 router.get(
   "/linkedin",
-  passport.authenticate("linkedin")
+  passport.authenticate("linkedin", {
+    scope: ["openid", "profile", "email"]
+  })
 );
 
 // LinkedIn OAuth callback (ONLY ONE)
@@ -40,11 +51,11 @@ router.get(
     session: true
   }),
   (req, res) => {
-    console.log("LinkedIn callback req.user:", req.user);
-
-    // Ensure session is saved before redirect
     req.session.save(() => {
-      res.redirect("/profile.html");
+      if (!req.user.profileCompleted) {
+        return res.redirect("/profile.html");
+      }
+      return res.redirect("/vote-page");
     });
   }
 );
@@ -55,7 +66,9 @@ router.get(
 
 router.get("/logout", (req, res) => {
   req.logout(() => {
-    res.redirect("/index.html");
+    req.session.destroy(() => {
+      res.redirect("/index.html");
+    });
   });
 });
 
