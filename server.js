@@ -11,16 +11,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// SESSION — works on localhost HTTP
+// SESSION
 app.use(session({
   name: "voting.sid",
   secret: process.env.SESSION_SECRET || "secret123",
   resave: false,
-  saveUninitialized: false,
+  // ✅ FIX: Must be true so OAuth state parameter is saved BEFORE the callback
+  saveUninitialized: true,
   cookie: {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    secure: process.env.NODE_ENV === "production",   // ← comma was missing here
+    secure: process.env.NODE_ENV === "production",
     maxAge: 24 * 60 * 60 * 1000
   }
 }));

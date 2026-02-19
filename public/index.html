@@ -113,7 +113,8 @@
           body: JSON.stringify({ email, password })
         });
         const d = await r.json();
-        if (d.message === "Login successful") {
+        // ✅ FIX: Check success flag, not message string
+        if (d.success) {
           window.location.href = d.profileCompleted ? "/vote-page" : "/profile.html";
         } else {
           showMsg(d.message || "Login failed.", true);
@@ -135,7 +136,8 @@
           body: JSON.stringify({ email, password })
         });
         const d = await r.json();
-        if (d.message === "Signup successful") {
+        // ✅ FIX: Check success flag, not message string
+        if (d.success) {
           window.location.href = "/profile.html";
         } else {
           showMsg(d.message || "Signup failed.", true);
