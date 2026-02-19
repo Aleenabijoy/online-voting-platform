@@ -8,6 +8,9 @@ const path       = require("path");
 
 const app = express();
 
+// ✅ Required for secure cookies behind Render's proxy
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -16,7 +19,6 @@ app.use(session({
   name: "voting.sid",
   secret: process.env.SESSION_SECRET || "secret123",
   resave: false,
-  // ✅ FIX: Must be true so OAuth state parameter is saved BEFORE the callback
   saveUninitialized: true,
   cookie: {
     httpOnly: true,

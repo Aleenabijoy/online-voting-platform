@@ -4,11 +4,14 @@ const OAuth2Strategy = require("passport-oauth2");
 const https          = require("https");
 const User           = require("../models/User");
 
+// ✅ Use Render URL in production, localhost in development
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
 /* ---------- GOOGLE ---------- */
 passport.use(new GoogleStrategy({
   clientID:     process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL:  "http://localhost:5000/auth/google/callback"
+  callbackURL:  `${BASE_URL}/auth/google/callback`
 },
 async (accessToken, refreshToken, profile, done) => {
   try {
@@ -53,7 +56,7 @@ const LinkedInOAuth = new OAuth2Strategy({
   tokenURL:         "https://www.linkedin.com/oauth/v2/accessToken",
   clientID:         process.env.LINKEDIN_CLIENT_ID,
   clientSecret:     process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL:      "http://localhost:5000/auth/linkedin/callback",
+  callbackURL:      `${BASE_URL}/auth/linkedin/callback`,
   scope:            ["openid", "profile", "email"],   // ← THIS was missing
   state:            true
 },
