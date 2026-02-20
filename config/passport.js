@@ -67,7 +67,7 @@ async (accessToken, refreshToken, profile, done) => {
 
     const linkedinId = info.sub;
     const email      = info.email || null;
-    const name       = info.name || ((info.given_name || "") + " " + (info.family_name || "")).trim() || "LinkedIn User";
+    const name       = const name = info.name || ((info.given_name || "") + " " + (info.family_name || "")).trim() || "LinkedIn User";
 
     let user = await User.findOne({ linkedinId });
     if (!user && email) {
