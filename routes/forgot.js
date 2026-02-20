@@ -5,6 +5,9 @@ const nodemailer = require("nodemailer");
 const router     = express.Router();
 const User       = require("../models/User");
 
+// ✅ Use Render URL in production, localhost in development
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
 /* -------- SEND RESET EMAIL -------- */
 router.post("/", async (req, res) => {
   try {
@@ -21,11 +24,12 @@ router.post("/", async (req, res) => {
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    user.resetToken      = token;
+    user.resetToken       = token;
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 min
     await user.save();
 
-    const resetLink = `http://localhost:5000/reset.html?token=${token}`;
+    // ✅ FIX: Use BASE_URL so link works on Render, not localhost
+    const resetLink = `${BASE_URL}/reset.html?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
