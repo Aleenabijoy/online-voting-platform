@@ -1,11 +1,11 @@
-const express = require("express");
-const crypto  = require("crypto");
-const bcrypt  = require("bcryptjs");
-const { Resend } = require("resend");
-const router  = express.Router();
-const User    = require("../models/User");
+const express    = require("express");
+const crypto     = require("crypto");
+const bcrypt     = require("bcryptjs");
+const nodemailer = require("nodemailer");
+const router     = express.Router();
+const User       = require("../models/User");
 
-const resend  = new Resend(process.env.RESEND_API_KEY);
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 
 /* -------- SEND RESET EMAIL -------- */
 router.post("/", async (req, res) => {
@@ -13,9 +13,13 @@ router.post("/", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Please enter your email." });
 
+    console.log("FORGOT: request received for", email);
+    console.log("EMAIL_USER:", process.env.EMAIL_USER);
+    console.log("EMAIL_PASS set:", !!process.env.EMAIL_PASS);
+    console.log("BASE_URL:", BASE_URL);
+
     const user = await User.findOne({ email });
 
-    // Don't reveal if email exists
     if (!user) return res.json({ message: "If that email is registered, a reset link has been sent." });
 
     if (user.provider !== "local") {
@@ -24,13 +28,27 @@ router.post("/", async (req, res) => {
 
     const token = crypto.randomBytes(32).toString("hex");
     user.resetToken       = token;
-    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 min
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${process.env.APP_URL}/reset.html?token=${token}`;
+    const resetLink = `${BASE_URL}/reset.html?token=${token}`;
+    console.log("Reset link:", resetLink);
 
-    await resend.emails.send({
-      from: "Online Voting <onboarding@resend.dev>",
+    const emailPass = (process.env.EMAIL_PASS || "").replace(/\s/g, "");
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: emailPass
+      },
+      connectionTimeout: 10000,
+      greetingTimeout:   10000,
+      socketTimeout:     15000
+    });
+
+    await transporter.sendMail({
+      from: `"Online Voting" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Reset Your Password",
       html: `
@@ -43,9 +61,12 @@ router.post("/", async (req, res) => {
       `
     });
 
+    console.log("✅ Email sent successfully to:", email);
     res.json({ message: "✅ Reset link sent! Check your inbox." });
+
   } catch (e) {
-    console.error("FORGOT:", e);
+    console.error("FORGOT ERROR CODE:", e.code);
+    console.error("FORGOT ERROR MSG:", e.message);
     res.status(500).json({ message: "Failed to send reset email. Try again." });
   }
 });
@@ -71,7 +92,7 @@ router.post("/reset/:token", async (req, res) => {
 
     res.json({ message: "Password reset successful! You can now log in." });
   } catch (e) {
-    console.error("RESET:", e);
+    console.error("RESET ERROR:", e.message);
     res.status(500).json({ message: "Password reset failed. Try again." });
   }
 });
