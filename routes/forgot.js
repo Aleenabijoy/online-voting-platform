@@ -1,22 +1,23 @@
-const express    = require("express");
-const crypto     = require("crypto");
-const bcrypt     = require("bcryptjs");
+const express = require("express");
+const crypto  = require("crypto");
+const bcrypt  = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const router     = express.Router();
-const User       = require("../models/User");
+const router  = express.Router();
+const User    = require("../models/User");
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
 /* -------- SEND RESET EMAIL -------- */
 router.post("/", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Please enter your email." });
-
-    console.log("FORGOT: request received for", email);
-    console.log("EMAIL_USER:", process.env.EMAIL_USER);
-    console.log("EMAIL_PASS set:", !!process.env.EMAIL_PASS);
-    console.log("BASE_URL:", BASE_URL);
 
     const user = await User.findOne({ email });
 
@@ -31,24 +32,10 @@ router.post("/", async (req, res) => {
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${BASE_URL}/reset.html?token=${token}`;
-    console.log("Reset link:", resetLink);
-
-    const emailPass = (process.env.EMAIL_PASS || "").replace(/\s/g, "");
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: emailPass
-      },
-      connectionTimeout: 10000,
-      greetingTimeout:   10000,
-      socketTimeout:     15000
-    });
+    const resetLink = `${process.env.APP_URL}/reset.html?token=${token}`;
 
     await transporter.sendMail({
-      from: `"Online Voting" <${process.env.EMAIL_USER}>`,
+      from: `"Online Voting" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Reset Your Password",
       html: `
@@ -61,12 +48,9 @@ router.post("/", async (req, res) => {
       `
     });
 
-    console.log("✅ Email sent successfully to:", email);
     res.json({ message: "✅ Reset link sent! Check your inbox." });
-
   } catch (e) {
-    console.error("FORGOT ERROR CODE:", e.code);
-    console.error("FORGOT ERROR MSG:", e.message);
+    console.error("FORGOT:", e);
     res.status(500).json({ message: "Failed to send reset email. Try again." });
   }
 });
@@ -92,7 +76,7 @@ router.post("/reset/:token", async (req, res) => {
 
     res.json({ message: "Password reset successful! You can now log in." });
   } catch (e) {
-    console.error("RESET ERROR:", e.message);
+    console.error("RESET:", e);
     res.status(500).json({ message: "Password reset failed. Try again." });
   }
 });
